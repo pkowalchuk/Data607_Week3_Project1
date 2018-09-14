@@ -1,0 +1,103 @@
+---
+title: "607 Week 3 Project 1"
+author: "Peter Kowalchuk"
+date: "9/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Project 1
+
+###In this project, you're given a text file with chess tournament results where the information has some structure. Your job is to create an R Markdown file that generates a .CSV file (that could for example be imported into a SQL database) with the following information for all of the players:   
+
+###Player's Name, Player's State, Total Number of Points, Player's Pre-Rating, and Average Pre Chess Rating of Opponents  
+
+To solve this project we start by building vectors for each one of the variables requireded from each player. We then combine the vectors into a data frame and export it to a csv file. We need to build 5 vectors, one for each variable. Each of these Vectors will have a total of 64 elements, one for each player. These elements represent the rows in out final data frame and csv file.
+
+##Import tournament data
+
+```{r}
+library(stringr)
+
+tournament<-readLines("tournamentinfo.txt")
+tournament
+```
+
+
+##Player Names
+
+```{r}
+playerNames<-str_extract(str_extract(tournament,"\\| [A-Z]+[:print:]+[A-Z]+     "),"[A-Z]+[:print:]+[A-Z]+")
+playerNames<-playerNames[!is.na(playerNames)]
+playerNames
+```
+
+##Player States
+
+```{r}
+playerStates<-str_extract(str_extract(tournament,"  [A-Z][A-Z] \\|"),"[A-Z][A-Z]")
+playerStates<-playerStates[!is.na(playerStates)]
+playerStates
+```
+
+##Total Number of Points
+
+```{r}
+totalPoints<-str_extract(str_extract(tournament,"\\|[0-9].[0-9]"),"[0-9].[0-9]")
+totalPoints<-totalPoints[!is.na(totalPoints)]
+totalPoints
+```
+
+##Player's Pre-Rating
+
+```{r}
+playerPreRating<-str_extract(str_extract(tournament,"R: +[:digit:]+"),"[:digit:]+")
+playerPreRating<-playerPreRating[!is.na(playerPreRating)]
+playerPreRating
+```
+
+##Average Pre Chess Rating of Opponents
+
+```{r}
+opponents<-str_extract_all(tournament,"\\|[0-9]\\.[0-9] +\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|")
+opponents<-Filter(length,opponents)
+opponents<-str_extract_all(opponents,"\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|[A-Z] +[0-9]*\\|")
+opponents<-str_extract_all(opponents,"[L,W,D] +[0-9]*")
+opponents<-str_extract_all(opponents,"[0-9]?[0-9]")
+opponents
+j<-0
+i<-0
+avgPreRatingOpp<- vector(mode="numeric", length=0)
+for (a in opponents) {
+  j=j+1
+  print(paste0("Player Number: ",j))
+  avgPreRatingOpp[j]<-0
+  i<-0
+  for (b in opponents[[j]]) {
+    i<-i+1
+    avgPreRatingOpp[j]<-avgPreRatingOpp[j]+as.numeric(playerPreRating[as.numeric(b)])
+    #print(avgPreRatingOpp[j])
+  }
+  avgPreRatingOpp[j]<-round(avgPreRatingOpp[j]/i,0)
+  print(avgPreRatingOpp[j])
+}
+avgPreRatingOpp
+```
+
+##Build data frame
+
+```{r}
+final<-data.frame(playerNames,playerStates,totalPoints,playerPreRating,avgPreRatingOpp)
+colnames(final)<-c("Player Name","Player State","Total Number of Points","Player's Pre-Rating","Average Pre Chess Rating of Opponents")
+final
+```
+
+##Export to CSV file
+
+```{r}
+write.csv(final,"ChessPlayersReport.csv")
+```
+
